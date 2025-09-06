@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { AppSidebar } from '@/components/etw/app-sidebar'
-import  FloatingChat  from '@/components/etw/floating-chat'
+import { FloatingChat } from '@/components/etw/floating-chat'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
