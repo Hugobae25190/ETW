@@ -36,7 +36,7 @@ const campuses = [
 
 const homeNavItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Daily Tasks', href: '/tasks', icon: Target },
+  { name: 'Missions', href: '/missions', icon: Target },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { name: 'Teams', href: '/teams', icon: Users },
   { name: 'Calendar', href: '/calendar', icon: Calendar },

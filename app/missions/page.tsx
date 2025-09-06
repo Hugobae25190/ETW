@@ -265,7 +265,7 @@ export default function TasksPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Tasks</h1>
+          <h1 className="text-3xl font-bold mb-2">Missions</h1>
           <p className="text-muted-foreground">
             Complete your daily, weekly, and monthly challenges
           </p>
