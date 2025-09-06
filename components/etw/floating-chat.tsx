@@ -46,13 +46,25 @@ export function FloatingChat({ isOpen, onToggle }: FloatingChatProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Position par défaut (bas droite)
+  const getDefaultPosition = () => ({
+    x: window.innerWidth - 450,
+    y: window.innerHeight - 550 // Bas de l'écran au lieu de 100px du haut
+  })
+
   // Initialize position on client side
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setPosition({
-        x: window.innerWidth - 450,
-        y: 100
-      })
+      // Récupérer la position sauvegardée ou utiliser la position par défaut
+      const savedPosition = sessionStorage.getItem('floatingChatPosition')
+      
+      if (savedPosition) {
+        const parsed = JSON.parse(savedPosition)
+        setPosition(parsed)
+      } else {
+        const defaultPos = getDefaultPosition()
+        setPosition(defaultPos)
+      }
     }
   }, [])
 
@@ -85,6 +97,14 @@ export function FloatingChat({ isOpen, onToggle }: FloatingChatProps) {
     }
   }
 
+  // Sauvegarder la position quand elle change (seulement en session)
+  const handleDragStop = (e: any, d: any) => {
+    const newPosition = { x: d.x, y: d.y }
+    setPosition(newPosition)
+    // Sauvegarder seulement pour la session courante
+    sessionStorage.setItem('floatingChatPosition', JSON.stringify(newPosition))
+  }
+
   if (!isOpen) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
@@ -103,13 +123,16 @@ export function FloatingChat({ isOpen, onToggle }: FloatingChatProps) {
     <Rnd
       size={size}
       position={position}
-      onDragStop={(e, d) => setPosition({ x: d.x, y: d.y })}
+      onDragStop={handleDragStop}
       onResizeStop={(e, direction, ref, delta, position) => {
         setSize({
           width: parseInt(ref.style.width),
           height: parseInt(ref.style.height),
         })
-        setPosition(position)
+        const newPosition = { x: position.x, y: position.y }
+        setPosition(newPosition)
+        // Sauvegarder aussi lors du resize
+        sessionStorage.setItem('floatingChatPosition', JSON.stringify(newPosition))
       }}
       minWidth={300}
       minHeight={200}
