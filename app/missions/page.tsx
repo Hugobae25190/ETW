@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AppSidebar } from '@/components/etw/app-sidebar'
+import { Sidebar } from '@/components/etw/sidebar'
 import { 
   CheckCircle, 
   Circle, 
@@ -38,7 +40,6 @@ interface Task {
 }
 
 const mockTasks: Task[] = [
-  // Daily Tasks
   {
     id: '1',
     title: 'Complete Morning Workout',
@@ -65,8 +66,6 @@ const mockTasks: Task[] = [
     type: 'daily',
     dueDate: 'Due today'
   },
-
-  // Weekly Tasks
   {
     id: '4',
     title: 'Complete 5 Workouts',
@@ -87,8 +86,6 @@ const mockTasks: Task[] = [
     type: 'weekly',
     dueDate: 'Due Sunday'
   },
-
-  // Monthly Tasks
   {
     id: '6',
     title: 'Monthly Strength Assessment',
@@ -98,8 +95,6 @@ const mockTasks: Task[] = [
     type: 'monthly',
     dueDate: 'Due in 12 days'
   },
-
-  // Yearly Goals
   {
     id: '7',
     title: 'Reach 100kg Bench Press',
@@ -133,8 +128,6 @@ const mockTasks: Task[] = [
     target: 365,
     dueDate: 'Dec 31, 2025'
   },
-
-  // Personal Tasks
   {
     id: '10',
     title: 'Learn Spanish Basics',
@@ -147,6 +140,17 @@ const mockTasks: Task[] = [
     dueDate: 'Self-paced'
   }
 ]
+
+const mockUser = {
+  id: '1',
+  username: 'Hugo',
+  avatar_url: '',
+  role: 'admin',
+  level: 'b-force',
+  strength_points: 2847,
+  coins: 1250,
+  login_streak: 23
+}
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>(mockTasks)
@@ -262,195 +266,202 @@ export default function TasksPage() {
   const personalStats = getStats('personal')
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Missions</h1>
-          <p className="text-muted-foreground">
-            Complete your daily, weekly, and monthly challenges
-          </p>
+    <div className="flex h-screen bg-background">
+      {/* SIDEBARS AJOUTÉES */}
+      <AppSidebar user={mockUser} />
+      <Sidebar user={mockUser} />
+      
+      {/* CONTENU PRINCIPAL */}
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto p-6">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Missions</h1>
+            <p className="text-muted-foreground">
+              Complete your daily, weekly, and monthly challenges
+            </p>
+          </div>
+
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Flame className="h-5 w-5 text-orange-500" />
+                </div>
+                <div className="text-2xl font-bold">{dailyStats.completed}/{dailyStats.total}</div>
+                <div className="text-xs text-muted-foreground">Daily Progress</div>
+                <div className="text-xs text-primary">{dailyStats.percentage}% complete</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Calendar className="h-5 w-5 text-blue-500" />
+                </div>
+                <div className="text-2xl font-bold">{weeklyStats.completed + weeklyStats.total}</div>
+                <div className="text-xs text-muted-foreground">Total Tasks</div>
+                <div className="text-xs text-green-500">{tasks.filter(t => t.isCompleted).length} completed</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Target className="h-5 w-5 text-red-500" />
+                </div>
+                <div className="text-2xl font-bold">23</div>
+                <div className="text-xs text-muted-foreground">Streak</div>
+                <div className="text-xs text-primary">days in a row</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Trophy className="h-5 w-5 text-yellow-500" />
+                </div>
+                <div className="text-2xl font-bold">#3</div>
+                <div className="text-xs text-muted-foreground">Team Rank</div>
+                <div className="text-xs text-primary">in your team</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Star className="h-5 w-5 text-purple-500" />
+                </div>
+                <div className="text-2xl font-bold">{yearlyStats.completed}/{yearlyStats.total}</div>
+                <div className="text-xs text-muted-foreground">Yearly Goals</div>
+                <div className="text-xs text-primary">in progress</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Tabs defaultValue="daily" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="daily" className="flex items-center gap-2">
+                <Flame className="h-4 w-4" />
+                Daily ({dailyStats.completed})
+              </TabsTrigger>
+              <TabsTrigger value="weekly" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Weekly ({weeklyStats.completed})
+              </TabsTrigger>
+              <TabsTrigger value="monthly" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Monthly ({monthlyStats.completed})
+              </TabsTrigger>
+              <TabsTrigger value="yearly" className="flex items-center gap-2">
+                <Trophy className="h-4 w-4" />
+                Yearly ({yearlyStats.completed})
+              </TabsTrigger>
+              <TabsTrigger value="personal" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Personal ({personalStats.completed})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="daily" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Daily Tasks</h2>
+                <Badge variant="secondary">Reset in 7h 42m</Badge>
+              </div>
+              <div className="space-y-4">
+                {getTasksByType('daily').map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="weekly" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Weekly Tasks</h2>
+                <Badge variant="secondary">Reset in 3 days</Badge>
+              </div>
+              <div className="space-y-4">
+                {getTasksByType('weekly').map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="monthly" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Monthly Tasks</h2>
+                <Badge variant="secondary">Reset in 12 days</Badge>
+              </div>
+              <div className="space-y-4">
+                {getTasksByType('monthly').map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="yearly" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Yearly Goals</h2>
+                <Badge variant="secondary">2025 Goals</Badge>
+              </div>
+              <div className="space-y-4">
+                {getTasksByType('yearly').map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="personal" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Personal Tasks</h2>
+                <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Task
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Personal Task</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Title</label>
+                        <Input
+                          value={newTaskTitle}
+                          onChange={(e) => setNewTaskTitle(e.target.value)}
+                          placeholder="Enter task title..."
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Description</label>
+                        <Textarea
+                          value={newTaskDescription}
+                          onChange={(e) => setNewTaskDescription(e.target.value)}
+                          placeholder="Enter task description..."
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsAddingTask(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={addPersonalTask}>
+                          Add Task
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="space-y-4">
+                {getTasksByType('personal').map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Flame className="h-5 w-5 text-orange-500" />
-              </div>
-              <div className="text-2xl font-bold">{dailyStats.completed}/{dailyStats.total}</div>
-              <div className="text-xs text-muted-foreground">Daily Progress</div>
-              <div className="text-xs text-primary">{dailyStats.percentage}% complete</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Calendar className="h-5 w-5 text-blue-500" />
-              </div>
-              <div className="text-2xl font-bold">{weeklyStats.completed + weeklyStats.total}</div>
-              <div className="text-xs text-muted-foreground">Total Tasks</div>
-              <div className="text-xs text-green-500">{tasks.filter(t => t.isCompleted).length} completed</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Target className="h-5 w-5 text-red-500" />
-              </div>
-              <div className="text-2xl font-bold">23</div>
-              <div className="text-xs text-muted-foreground">Streak</div>
-              <div className="text-xs text-primary">days in a row</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Trophy className="h-5 w-5 text-yellow-500" />
-              </div>
-              <div className="text-2xl font-bold">#3</div>
-              <div className="text-xs text-muted-foreground">Team Rank</div>
-              <div className="text-xs text-primary">in your team</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Star className="h-5 w-5 text-purple-500" />
-              </div>
-              <div className="text-2xl font-bold">{yearlyStats.completed}/{yearlyStats.total}</div>
-              <div className="text-xs text-muted-foreground">Yearly Goals</div>
-              <div className="text-xs text-primary">in progress</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="daily" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="daily" className="flex items-center gap-2">
-              <Flame className="h-4 w-4" />
-              Daily ({dailyStats.completed})
-            </TabsTrigger>
-            <TabsTrigger value="weekly" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Weekly ({weeklyStats.completed})
-            </TabsTrigger>
-            <TabsTrigger value="monthly" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Monthly ({monthlyStats.completed})
-            </TabsTrigger>
-            <TabsTrigger value="yearly" className="flex items-center gap-2">
-              <Trophy className="h-4 w-4" />
-              Yearly ({yearlyStats.completed})
-            </TabsTrigger>
-            <TabsTrigger value="personal" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Personal ({personalStats.completed})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="daily" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Daily Tasks</h2>
-              <Badge variant="secondary">Reset in 7h 42m</Badge>
-            </div>
-            <div className="space-y-4">
-              {getTasksByType('daily').map((task) => (
-                <TaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="weekly" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Weekly Tasks</h2>
-              <Badge variant="secondary">Reset in 3 days</Badge>
-            </div>
-            <div className="space-y-4">
-              {getTasksByType('weekly').map((task) => (
-                <TaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="monthly" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Monthly Tasks</h2>
-              <Badge variant="secondary">Reset in 12 days</Badge>
-            </div>
-            <div className="space-y-4">
-              {getTasksByType('monthly').map((task) => (
-                <TaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="yearly" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Yearly Goals</h2>
-              <Badge variant="secondary">2025 Goals</Badge>
-            </div>
-            <div className="space-y-4">
-              {getTasksByType('yearly').map((task) => (
-                <TaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="personal" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Personal Tasks</h2>
-              <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Task
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Personal Task</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Title</label>
-                      <Input
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder="Enter task title..."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Description</label>
-                      <Textarea
-                        value={newTaskDescription}
-                        onChange={(e) => setNewTaskDescription(e.target.value)}
-                        placeholder="Enter task description..."
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsAddingTask(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={addPersonalTask}>
-                        Add Task
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            <div className="space-y-4">
-              {getTasksByType('personal').map((task) => (
-                <TaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   )

@@ -260,7 +260,7 @@ export default function LeaderboardPage() {
         </div>
       </main>
 
-      <FloatingChat isOpen={isChatOpen} onToggle={() => setIsChatOpen(!isChatOpen)} />
+      <FloatingChat/>
     </div>
   )
 }
