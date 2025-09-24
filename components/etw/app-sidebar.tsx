@@ -197,22 +197,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
               })}
             </div>
 
-            {/* Quick Stats */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider">
-                Today
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-sidebar-foreground/70">Tasks</span>
-                  <span className="text-sidebar-foreground">2/3</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sidebar-foreground/70">Online</span>
-                  <Badge variant="secondary" className="text-xs">247</Badge>
-                </div>
-              </div>
-            </div>
+            {/* Quick Stats removed as requested */}
           </div>
         </ScrollArea>
 
