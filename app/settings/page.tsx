@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { AppSidebar } from '@/components/etw/app-sidebar'
-import { FloatingChat } from '@/components/etw/floating-chat'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,7 +35,6 @@ const mockUser = {
 }
 
 export default function SettingsPage() {
-  const [isChatOpen, setIsChatOpen] = useState(false)
   const [settings, setSettings] = useState({
     // Notifications
     emailNotifications: true,
@@ -370,8 +368,6 @@ export default function SettingsPage() {
           </Card>
         </div>
       </main>
-
-      <FloatingChat isOpen={isChatOpen} onToggle={() => setIsChatOpen(!isChatOpen)} />
     </div>
   )
 }

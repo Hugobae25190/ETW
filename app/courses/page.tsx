@@ -44,6 +44,7 @@ interface Video {
   isBookmarked: boolean
   bookmarkTime?: string
   description: string
+  url: string
 }
 
 const courses: Course[] = [
@@ -96,7 +97,8 @@ const videos: { [key: string]: Video[] } = {
       duration: '12:34',
       isCompleted: true,
       isBookmarked: false,
-      description: 'Learn the basics of strength training and proper form'
+      description: 'Learn the basics of strength training and proper form',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
     },
     {
       id: '1-2',
@@ -105,7 +107,8 @@ const videos: { [key: string]: Video[] } = {
       isCompleted: true,
       isBookmarked: true,
       bookmarkTime: '8:23',
-      description: 'Master the big three: squat, bench, deadlift'
+      description: 'Master the big three: squat, bench, deadlift',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
     },
     {
       id: '1-3',
@@ -113,7 +116,8 @@ const videos: { [key: string]: Video[] } = {
       duration: '15:20',
       isCompleted: false,
       isBookmarked: false,
-      description: 'How to continuously challenge your muscles'
+      description: 'How to continuously challenge your muscles',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
     }
   ],
   '2': [
@@ -124,7 +128,8 @@ const videos: { [key: string]: Video[] } = {
       isCompleted: true,
       isBookmarked: true,
       bookmarkTime: '15:42',
-      description: 'Develop the mindset of successful entrepreneurs'
+      description: 'Develop the mindset of successful entrepreneurs',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'
     },
     {
       id: '2-2',
@@ -132,7 +137,8 @@ const videos: { [key: string]: Video[] } = {
       duration: '28:30',
       isCompleted: false,
       isBookmarked: false,
-      description: 'Step-by-step guide to starting your business'
+      description: 'Step-by-step guide to starting your business',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'
     }
   ]
 }
@@ -198,51 +204,8 @@ export default function CoursesPage() {
               <div className="lg:col-span-2">
                 <Card>
                   <CardContent className="p-0">
-                    <div className="aspect-video bg-black rounded-t-lg flex items-center justify-center relative">
-                      <div className="text-white text-center">
-                        <PlayCircle className="h-16 w-16 mx-auto mb-4 opacity-80" />
-                        <p className="text-lg font-medium">{currentVideo.title}</p>
-                        <p className="text-sm opacity-70">{currentVideo.duration}</p>
-                      </div>
-
-                      {/* Video Controls */}
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <div className="flex items-center gap-4 bg-black/50 rounded-lg p-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsPlaying(!isPlaying)}
-                            className="text-white hover:bg-white/20"
-                          >
-                            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                          </Button>
-
-                          <div className="flex-1">
-                            <Progress value={45} className="h-2" />
-                          </div>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleBookmark(currentVideo.id, '8:23')}
-                            className="text-white hover:bg-white/20"
-                          >
-                            {currentVideo.isBookmarked
-                              ? <BookmarkCheck className="h-4 w-4" />
-                              : <Bookmark className="h-4 w-4" />
-                            }
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleVideoComplete(currentVideo.id)}
-                            className="text-white hover:bg-white/20"
-                          >
-                            <SkipForward className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                    <div className="aspect-video bg-black rounded-t-lg overflow-hidden">
+                      <video key={currentVideo.id} className="w-full h-full" controls src={currentVideo.url} />
                     </div>
 
                     <div className="p-6">

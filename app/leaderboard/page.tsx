@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { AppSidebar } from '@/components/etw/app-sidebar'
-import { FloatingChat } from '@/components/etw/floating-chat'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -46,7 +45,6 @@ const mockLeaderboard = {
 }
 
 export default function LeaderboardPage() {
-  const [isChatOpen, setIsChatOpen] = useState(false)
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -259,8 +257,6 @@ export default function LeaderboardPage() {
           </Tabs>
         </div>
       </main>
-
-      <FloatingChat/>
     </div>
   )
 }

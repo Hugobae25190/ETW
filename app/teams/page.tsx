@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { AppSidebar } from '@/components/etw/app-sidebar'
-import { FloatingChat } from '@/components/etw/floating-chat'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,7 +20,6 @@ const mockUser = {
 }
 
 export default function TeamsPage() {
-  const [isChatOpen, setIsChatOpen] = useState(false)
 
   return (
     <div className="flex h-screen bg-background">
@@ -61,8 +59,6 @@ export default function TeamsPage() {
           </Card>
         </div>
       </main>
-
-      <FloatingChat isOpen={isChatOpen} onToggle={() => setIsChatOpen(!isChatOpen)} />
     </div>
   )
 }

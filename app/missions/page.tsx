@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AppSidebar } from '@/components/etw/app-sidebar'
+import TaskEditor from '@/components/etw/task-editor'
 import { Sidebar } from '@/components/etw/sidebar'
 import { 
   CheckCircle, 
@@ -23,6 +24,7 @@ import {
   User,
   Flame
 } from 'lucide-react'
+import { loadPersonalTasks, upsertPersonalTask, schedulePersonalTask, updatePersonalTask, PersonalTask } from '@/lib/personal-tasks'
 
 interface Task {
   id: string
@@ -128,17 +130,7 @@ const mockTasks: Task[] = [
     target: 365,
     dueDate: 'Dec 31, 2025'
   },
-  {
-    id: '10',
-    title: 'Learn Spanish Basics',
-    description: 'Complete beginner Spanish course on Duolingo',
-    reward: { sp: 150, coins: 30 },
-    isCompleted: false,
-    type: 'personal',
-    progress: 25,
-    target: 100,
-    dueDate: 'Self-paced'
-  }
+  // removed demo personal task to keep list clean
 ]
 
 const mockUser = {
@@ -152,37 +144,122 @@ const mockUser = {
   login_streak: 23
 }
 
+// old import removed after unifying with shared store at top
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>(mockTasks)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDescription, setNewTaskDescription] = useState('')
   const [isAddingTask, setIsAddingTask] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editorTaskId, setEditorTaskId] = useState<string | undefined>(undefined)
 
   const toggleTask = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { ...task, isCompleted: !task.isCompleted }
-        : task
-    ))
+    setTasks(prev => prev.map(task => task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task))
+    // reflect to shared store so Calendar updates too (with completedAt timestamp)
+    const p = loadPersonalTasks().find(p => p.id === taskId)
+    if (p) {
+      const nowIso = new Date().toISOString()
+      const next = updatePersonalTask(taskId, { isCompleted: !p.isCompleted, completedAt: !p.isCompleted ? nowIso : null })
+      window.dispatchEvent(new CustomEvent('personal-tasks-updated'))
+    }
   }
 
   const addPersonalTask = () => {
     if (newTaskTitle.trim()) {
-      const newTask: Task = {
+      const newTask: PersonalTask = {
         id: Date.now().toString(),
         title: newTaskTitle,
         description: newTaskDescription,
         reward: { sp: 50, coins: 10 },
         isCompleted: false,
         type: 'personal',
-        dueDate: 'Self-paced'
+        dueDate: 'Self-paced',
+        scheduledStart: null,
+        scheduledEnd: null,
       }
-      setTasks([...tasks, newTask])
+      const personals = upsertPersonalTask(newTask)
+      // reflect into local UI list for missions
+      setTasks(prev => [...prev, {
+        id: newTask.id,
+        title: newTask.title,
+        description: newTask.description,
+        reward: newTask.reward,
+        isCompleted: newTask.isCompleted,
+        type: 'personal',
+        dueDate: newTask.dueDate,
+      }])
       setNewTaskTitle('')
       setNewTaskDescription('')
       setIsAddingTask(false)
     }
   }
+
+  // On mount, hydrate personal tasks from storage and merge into state if any not present
+  const syncFromStore = () => {
+    const stored = loadPersonalTasks()
+    setTasks(prev => {
+      const nonPersonal = prev.filter(t => t.type !== 'personal')
+      const formatDate = (d: Date) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      const personals: Task[] = stored.map(p => {
+        let dueLabel = 'No date'
+        if (p.scheduledStart) {
+          const start = new Date(p.scheduledStart)
+          const end = p.scheduledEnd ? new Date(p.scheduledEnd) : undefined
+          // Multi-day range
+          if (p.isMultiDay && end) {
+            dueLabel = `${formatDate(start)} - ${formatDate(end)}`
+          } else {
+            const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+            const dayDiff = Math.floor((startDay.getTime() - todayStart.getTime()) / (1000*60*60*24))
+            const now = new Date()
+            if (dayDiff === 0) {
+              // today: show precise countdown
+              const diffMs = start.getTime() - now.getTime()
+              if (diffMs >= 0) {
+                const totalMin = Math.max(0, Math.round(diffMs / 60000))
+                const h = Math.floor(totalMin / 60)
+                const m = totalMin % 60
+                const timeStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                dueLabel = `Today • in ${h>0?`${h}h `:''}${m}m (at ${timeStr})`
+              } else {
+                const timeStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                dueLabel = `Today • at ${timeStr}`
+              }
+            } else if (dayDiff > 0 && dayDiff <= 7) {
+              dueLabel = `Due in ${dayDiff} day${dayDiff>1?'s':''}`
+            } else if (dayDiff < 0 && Math.abs(dayDiff) <= 7) {
+              dueLabel = `${Math.abs(dayDiff)} day${Math.abs(dayDiff)>1?'s':''} ago`
+            } else {
+              dueLabel = formatDate(start)
+            }
+          }
+        }
+        return {
+          id: p.id,
+          title: p.title,
+          description: p.description || '',
+          reward: p.reward,
+          isCompleted: p.isCompleted,
+          type: 'personal',
+          dueDate: dueLabel,
+        }
+      })
+      return [...nonPersonal, ...personals]
+    })
+  }
+
+  useEffect(() => {
+    syncFromStore()
+  }, [])
+
+  useEffect(() => {
+    const handler = () => syncFromStore()
+    window.addEventListener('personal-tasks-updated', handler)
+    return () => window.removeEventListener('personal-tasks-updated', handler)
+  }, [])
 
   const getTasksByType = (type: Task['type']) => tasks.filter(task => task.type === type)
 
@@ -194,23 +271,35 @@ export default function TasksPage() {
   }
 
   const TaskCard = ({ task }: { task: Task }) => (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => {
+      if (task.type === 'personal') {
+        setEditorTaskId(task.id)
+        setEditorOpen(true)
+      }
+    }}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => toggleTask(task.id)}
+            onClick={(e) => { e.stopPropagation(); toggleTask(task.id) }}
             className="mt-1 p-0 h-auto"
           >
             {task.isCompleted ? (
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-7 w-7 text-green-500" />
             ) : (
-              <Circle className="h-5 w-5 text-muted-foreground" />
+              <Circle className="h-7 w-7 text-muted-foreground" />
             )}
           </Button>
           
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-2" onClick={() => {
+            if (task.type === 'personal') {
+              const p = loadPersonalTasks().find(p => p.id === task.id)
+              if (p) {
+                window.dispatchEvent(new CustomEvent('open-calendar-task-editor', { detail: { taskId: task.id } }))
+              }
+            }
+          }}>
             <div className="flex items-center justify-between">
               <h3 className={`font-medium ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
                 {task.title}
@@ -223,6 +312,9 @@ export default function TasksPage() {
             </div>
             
             <p className="text-sm text-muted-foreground">{task.description}</p>
+            {task.type === 'personal' && (
+              <div className="text-xs text-muted-foreground">Date: {task.dueDate}</div>
+            )}
             
             {task.progress !== undefined && task.target !== undefined && (
               <div className="space-y-1">
@@ -339,27 +431,27 @@ export default function TasksPage() {
             </Card>
           </div>
 
-          <Tabs defaultValue="daily" className="space-y-6">
+          <Tabs defaultValue="personal" className="space-y-6">
             <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="personal" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Personal ({personalStats.total - personalStats.completed})
+              </TabsTrigger>
               <TabsTrigger value="daily" className="flex items-center gap-2">
                 <Flame className="h-4 w-4" />
-                Daily ({dailyStats.completed})
+                Daily ({dailyStats.total - dailyStats.completed})
               </TabsTrigger>
               <TabsTrigger value="weekly" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Weekly ({weeklyStats.completed})
+                Weekly ({weeklyStats.total - weeklyStats.completed})
               </TabsTrigger>
               <TabsTrigger value="monthly" className="flex items-center gap-2">
                 <Target className="h-4 w-4" />
-                Monthly ({monthlyStats.completed})
+                Monthly ({monthlyStats.total - monthlyStats.completed})
               </TabsTrigger>
               <TabsTrigger value="yearly" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
-                Yearly ({yearlyStats.completed})
-              </TabsTrigger>
-              <TabsTrigger value="personal" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Personal ({personalStats.completed})
+                Yearly ({yearlyStats.total - yearlyStats.completed})
               </TabsTrigger>
             </TabsList>
 
@@ -414,45 +506,10 @@ export default function TasksPage() {
             <TabsContent value="personal" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Personal Tasks</h2>
-                <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Task
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add Personal Task</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium">Title</label>
-                        <Input
-                          value={newTaskTitle}
-                          onChange={(e) => setNewTaskTitle(e.target.value)}
-                          placeholder="Enter task title..."
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Description</label>
-                        <Textarea
-                          value={newTaskDescription}
-                          onChange={(e) => setNewTaskDescription(e.target.value)}
-                          placeholder="Enter task description..."
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsAddingTask(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={addPersonalTask}>
-                          Add Task
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button size="sm" onClick={() => { setEditorTaskId(undefined); setEditorOpen(true) }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Task
+                </Button>
               </div>
               <div className="space-y-4">
                 {getTasksByType('personal').map((task) => (
@@ -463,6 +520,7 @@ export default function TasksPage() {
           </Tabs>
         </div>
       </div>
+      <TaskEditor open={editorOpen} taskId={editorTaskId} onClose={() => { setEditorOpen(false); setEditorTaskId(undefined); syncFromStore() }} />
     </div>
   )
 }
